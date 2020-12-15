@@ -24,19 +24,19 @@
 namespace bhp {
 
 template <typename U>
-bool TestBit(U x, int pos) {
+[[nodiscard]] bool TestBit(U x, int pos) {
   static_assert(std::is_integral<U>::value, "Integral required.");
   return (x & (U(1) << pos));
 }
 
 template <typename U>
-U SetBit(U x, int pos) {
+[[nodiscard]] U SetBit(U x, int pos) {
   static_assert(std::is_integral<U>::value, "Integral required.");
   return (x | (U(1) << pos));
 }
 
 template <typename U>
-U ResetBit(U x, int pos) {
+[[nodiscard]] U ResetBit(U x, int pos) {
   static_assert(std::is_integral<U>::value, "Integral required.");
   return (x & ~(U(1) << pos));
 }
