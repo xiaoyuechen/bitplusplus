@@ -1,0 +1,7 @@
+# Use the Google style in this project.
+BasedOnStyle: Google
+
+Language: Cpp
+
+DerivePointerAlignment: false
+PointerAlignment: Left
