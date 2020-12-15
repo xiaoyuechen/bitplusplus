@@ -24,24 +24,41 @@
 
 namespace bhp {
 
-struct BitTest
-    : public testing::TestWithParam<std::tuple<std::uint64_t, int, bool>> {};
+struct BitTestStruct {
+  std::uint64_t x;
+  int pos;
+  bool set;
+  int clz, crz;
+};
+
+struct BitTest : public testing::TestWithParam<BitTestStruct> {};
 
 TEST_P(BitTest, TestBit) {
-  auto [x, pos, set] = GetParam();
+  auto [x, pos, set, clz, crz] = GetParam();
   bool s = TestBit(x, pos);
   EXPECT_FALSE(set ^ TestBit(x, pos));
 }
 
 TEST_P(BitTest, SetReset) {
-  auto [x, pos, set] = GetParam();
+  auto [x, pos, set, clz, crz] = GetParam();
   EXPECT_TRUE(TestBit(SetBit(x, pos), pos));
   EXPECT_FALSE(TestBit(ResetBit(x, pos), pos));
 }
 
-static constexpr const std::tuple<std::uint64_t, int, bool> kBitTestTestData[] =
-    {{0x0, 0, false},   {0x1, 0, true},      {0x000f, 3, true},
-     {0x000f, 2, true}, {0x000f0, 1, false}, {0x1ull << 63, 63, true}};
+TEST_P(BitTest, CzlCzrTest) {
+  auto [x, pos, set, clz, crz] = GetParam();
+  if (clz >= 0) {
+    EXPECT_EQ(CountZero<From::Left>(x), clz);
+  }
+  if (crz >= 0) {
+    EXPECT_EQ(CountZero<From::Right>(x), crz);
+  }
+}
+
+static constexpr const BitTestStruct kBitTestTestData[] = {
+    {0x0, 0, false, -1, -1},        {0x1, 0, true, 63, 0},
+    {0x000f, 3, true, 15 * 4, 0},   {0x000f, 2, true, 15 * 4, 0},
+    {0x000f0, 1, false, 14 * 4, 4}, {0x1ull << 63, 63, true, 0, 63}};
 
 INSTANTIATE_TEST_SUITE_P(, BitTest, testing::ValuesIn(kBitTestTestData));
 

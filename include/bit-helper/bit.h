@@ -18,27 +18,175 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <type_traits>
 
 namespace bhp {
 
+// You would get a linker error if you try to use the 64-bit specializations on
+// a 32-bit machine
+
 template <typename U>
-[[nodiscard]] bool TestBit(U x, int pos) {
+[[nodiscard]] constexpr bool TestBit(U x, int pos) noexcept;
+
+template <typename U>
+[[nodiscard]] constexpr U SetBit(U x, int pos) noexcept;
+
+template <typename U>
+[[nodiscard]] constexpr U ResetBit(U x, int pos) noexcept;
+
+enum class From { Left, Right };
+
+template <From from, typename U>
+int CountZero(U x) noexcept;
+template <>
+int CountZero<From::Left>(std::uint32_t x) noexcept;
+template <>
+int CountZero<From::Right>(std::uint32_t x) noexcept;
+template <>
+int CountZero<From::Left>(std::uint64_t x) noexcept;
+template <>
+int CountZero<From::Right>(std::uint64_t x) noexcept;
+
+template <From from, typename U>
+std::optional<std::size_t> CountZero(const U* begin, const U* end) noexcept;
+template <>
+std::optional<std::size_t> CountZero<From::Left>(
+    const std::uint32_t* begin, const std::uint32_t* end) noexcept;
+template <>
+std::optional<std::size_t> CountZero<From::Right>(
+    const std::uint32_t* begin, const std::uint32_t* end) noexcept;
+template <>
+std::optional<std::size_t> CountZero<From::Left>(
+    const std::uint64_t* begin, const std::uint64_t* end) noexcept;
+template <>
+std::optional<std::size_t> CountZero<From::Right>(
+    const std::uint64_t* begin, const std::uint64_t* end) noexcept;
+
+//////////////////// implementation details below ////////////////////
+
+template <typename U>
+[[nodiscard]] constexpr bool TestBit(U x, int pos) noexcept {
   static_assert(std::is_integral<U>::value, "Integral required.");
   return (x & (U(1) << pos));
 }
 
 template <typename U>
-[[nodiscard]] U SetBit(U x, int pos) {
+[[nodiscard]] constexpr U SetBit(U x, int pos) noexcept {
   static_assert(std::is_integral<U>::value, "Integral required.");
   return (x | (U(1) << pos));
 }
 
 template <typename U>
-[[nodiscard]] U ResetBit(U x, int pos) {
+[[nodiscard]] constexpr U ResetBit(U x, int pos) noexcept {
   static_assert(std::is_integral<U>::value, "Integral required.");
   return (x & ~(U(1) << pos));
 }
+
+template <>
+int CountZero<From::Left>(std::uint32_t x) noexcept {
+#ifdef _MSC_VER
+  unsigned long index;  // NOLINT
+  _BitScanReverse(&index, x);
+  return 31 ^ static_cast<int>(index);
+#else
+  return __builtin_clz(x);
+#endif
+}
+
+template <>
+int CountZero<From::Right>(std::uint32_t x) noexcept {
+#ifdef _MSC_VER
+  unsigned long index;  // NOLINT
+  _BitScanForward(&index, x);
+  return static_cast<int>(index);
+#else
+  return __builtin_ctz(x);
+#endif
+}
+
+#if _WIN64 || __x86_64__ || __ppc64__
+
+template <>
+int CountZero<From::Left>(std::uint64_t x) noexcept {
+#ifdef _MSC_VER
+  unsigned long index;  // NOLINT
+  _BitScanReverse64(&index, x);
+  return 63 ^ static_cast<int>(index);
+#else
+  return __builtin_clzll(x);
+#endif
+}
+
+template <>
+int CountZero<From::Right>(std::uint64_t x) noexcept {
+#ifdef _MSC_VER
+  unsigned long index;  // NOLINT
+  _BitScanForward64(&index, x);
+  return static_cast<int>(index);
+#else
+  return __builtin_ctzll(x);
+#endif
+}
+
+#endif
+
+namespace internal {
+
+template <typename U>
+std::optional<std::size_t> CountLeftZeroArrayImpl(const U* begin,
+                                                  const U* end) noexcept {
+  for (auto iter = begin; iter != end; ++iter) {
+    if (*iter != 0) {
+      return 8 * sizeof(U) * (iter - begin) + CountZero<From::Left>(*iter);
+    }
+  }
+  return std::nullopt;
+}
+
+template <typename U>
+std::optional<std::size_t> CountRightZeroArrayImpl(const U* begin,
+                                                   const U* end) noexcept {
+  --end;
+  --begin;
+  for (auto iter = end; iter != begin; --iter) {
+    if (*iter != 0) {
+      return 8 * sizeof(U) * (end - iter) + CountZero<From::Right>(*iter);
+    }
+  }
+  return std::nullopt;
+}
+
+}  // namespace internal
+
+template <>
+std::optional<std::size_t> CountZero<From::Left>(
+    const std::uint32_t* begin, const std::uint32_t* end) noexcept {
+  return internal::CountLeftZeroArrayImpl<std::uint32_t>(begin, end);
+}
+
+template <>
+std::optional<std::size_t> CountZero<From::Right>(
+    const std::uint32_t* begin, const std::uint32_t* end) noexcept {
+  return internal::CountRightZeroArrayImpl<std::uint32_t>(begin, end);
+}
+
+#if _WIN64 || __x86_64__ || __ppc64__
+
+template <>
+std::optional<std::size_t> CountZero<From::Left>(
+    const std::uint64_t* begin, const std::uint64_t* end) noexcept {
+  return internal::CountLeftZeroArrayImpl<std::uint64_t>(begin, end);
+}
+
+template <>
+std::optional<std::size_t> CountZero<From::Right>(
+    const std::uint64_t* begin, const std::uint64_t* end) noexcept {
+  return internal::CountRightZeroArrayImpl<std::uint64_t>(begin, end);
+}
+
+#endif
 
 }  // namespace bhp
