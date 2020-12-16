@@ -36,28 +36,28 @@ class BitVector {
   static constexpr const size_type kWordBits = sizeof(size_type) * 8;
 
   explicit BitVector(size_type count = 0, bool value = false)
-      : mask_(BitToWordCount(count), value ? ~0 : 0), size_{count} {}
+      : words_(BitToWordCount(count), value ? ~0 : 0), size_{count} {}
 
   size_type size() const noexcept { return size_; }
 
-  size_type capacity() const noexcept { return mask_.size() * kWordBits; }
+  size_type capacity() const noexcept { return words_.size() * kWordBits; }
 
   template <From from>
   std::optional<size_type> CountZero() const noexcept {
     if constexpr (from == From::Right) {
-      if (mask_.back() != 0) {
-        auto count = ::bpp::CountZero<From::Right>(mask_.back()) -
-                     static_cast<int>(kWordBits * mask_.size() - size_);
+      if (words_.back() != 0) {
+        auto count = ::bpp::CountZero<From::Right>(words_.back()) -
+                     static_cast<int>(kWordBits * words_.size() - size_);
         if (count >= 0) {
           return count;
         }
       }
     }
     auto count =
-        ::bpp::CountZero<from>(mask_.data(), mask_.data() + mask_.size());
+        ::bpp::CountZero<from>(words_.data(), words_.data() + words_.size());
     if (count.has_value() && count < size_) {
       if constexpr (from == From::Right) {
-        *count -= kWordBits * mask_.size() - size_;
+        *count -= kWordBits * words_.size() - size_;
       }
       return count;
     }
@@ -67,19 +67,19 @@ class BitVector {
   template <From from>
   bool test(size_type pos) const noexcept {
     auto [word, bit] = GetCursor<from>(pos);
-    return TestBit<From::Left>(mask_[word], bit);
+    return TestBit<From::Left>(words_[word], bit);
   }
 
   template <From from>
   void set(size_type pos) noexcept {
     auto [word, bit] = GetCursor<from>(pos);
-    mask_[word] = SetBit<From::Left>(mask_[word], bit);
+    words_[word] = SetBit<From::Left>(words_[word], bit);
   }
 
   template <From from>
   void reset(size_type pos) noexcept {
     auto [word, bit] = GetCursor<from>(pos);
-    mask_[word] = ResetBit<From::Left>(mask_[word], bit);
+    words_[word] = ResetBit<From::Left>(words_[word], bit);
   }
 
   const_reference operator[](size_type pos) const noexcept {
@@ -90,19 +90,19 @@ class BitVector {
 
   void resize(size_type count, bool value = false) {
     if (size_ < count) {
-      mask_.resize(BitToWordCount(count), value ? -1 : 0);
+      words_.resize(BitToWordCount(count), value ? -1 : 0);
       FixGrowthBorder(size_, value);
       size_ = count;
     } else if (size_ > count) {
       size_ = count;
-      mask_.resize(BitToWordCount(count));
+      words_.resize(BitToWordCount(count));
     }
   }
 
   void push_back(bool value) { resize(size_ + 1, value); }
 
   void clear() noexcept {
-    mask_.clear();
+    words_.clear();
     size_ = 0;
   }
 
@@ -150,12 +150,12 @@ class BitVector {
     auto end_mask = ~size_type(0);
     end_mask >>= (old_size % kWordBits);
     if (value)
-      mask_[old_size / kWordBits] |= end_mask;
+      words_[old_size / kWordBits] |= end_mask;
     else
-      mask_[old_size / kWordBits] &= ~end_mask;
+      words_[old_size / kWordBits] &= ~end_mask;
   }
 
-  std::vector<size_type> mask_;
+  std::vector<size_type> words_;
   size_type size_;
 };
 
