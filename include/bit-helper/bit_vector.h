@@ -130,7 +130,8 @@ class BitVector {
 
  private:
   struct Cursor {
-    size_type word_cursor, bit_cursor;
+    size_type word_cursor;
+    int bit_cursor;
   };
 
   constexpr size_type BitToWordCount(size_type count) const noexcept {
@@ -141,7 +142,7 @@ class BitVector {
   constexpr Cursor GetCursor(size_type pos) const noexcept {
     if constexpr (from == From::Right) pos = size_ - 1 - pos;
     size_type word_cursor = pos / kWordBits;
-    size_type bit_cursor = pos - kWordBits * word_cursor;
+    int bit_cursor = static_cast<int>(pos - kWordBits * word_cursor);
     return Cursor{word_cursor, bit_cursor};
   }
 
