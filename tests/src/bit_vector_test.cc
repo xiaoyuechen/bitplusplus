@@ -78,4 +78,4 @@ TEST(BitVectorTest, Reference) {
   EXPECT_EQ(vec.CountZero<From::Right>(), 1);
 }
 
-}  // namespace bhp
+}  // namespace bpp
