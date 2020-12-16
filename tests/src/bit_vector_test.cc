@@ -32,7 +32,19 @@ TEST(BitVectorTest, ResizeDown) {
   EXPECT_EQ(vec.size(), 64);
   EXPECT_TRUE(vec.test<From::Left>(63));
   EXPECT_FALSE(vec.test<From::Left>(62));
-  EXPECT_EQ(*vec.countl_zero(), 63);
+  EXPECT_EQ(*vec.CountZero<From::Left>(), 63);
+  EXPECT_EQ(*vec.CountZero<From::Right>(), 0);
+}
+
+TEST(BitVectorTest, ResizeDown2) {
+  auto vec = BitVector(120, false);
+  vec.set<From::Left>(62);
+  vec.resize(64);
+  EXPECT_EQ(vec.size(), 64);
+  EXPECT_TRUE(vec.test<From::Left>(62));
+  EXPECT_FALSE(vec.test<From::Left>(61));
+  EXPECT_EQ(*vec.CountZero<From::Left>(), 62);
+  EXPECT_EQ(*vec.CountZero<From::Right>(), 1);
 }
 
 TEST(BitVectorTest, ResizeUp) {
@@ -45,11 +57,12 @@ TEST(BitVectorTest, ResizeUp) {
   EXPECT_TRUE(vec.test<From::Left>(119));
   EXPECT_FALSE(vec.test<From::Left>(120));
   EXPECT_FALSE(vec.test<From::Left>(149));
-  EXPECT_EQ(*vec.countl_zero(), 119);
+  EXPECT_EQ(*vec.CountZero<From::Left>(), 119);
+  EXPECT_EQ(*vec.CountZero<From::Right>(), 149 - 119);
 }
 
 TEST(BitVectorTest, Reference) {
-  static constexpr std::size_t kCount = 9999;
+  static constexpr std::size_t kCount = 99999;
   auto vec = BitVector(kCount, false);
   for (std::size_t i = 0; i != kCount - 1; ++i) {
     vec[i] = true;
@@ -61,7 +74,8 @@ TEST(BitVectorTest, Reference) {
     EXPECT_TRUE(vec.test<From::Left>(i));
   }
   EXPECT_FALSE(vec.test<From::Left>(kCount - 1));
-  EXPECT_EQ(vec.countl_zero(), 0);
+  EXPECT_EQ(vec.CountZero<From::Left>(), 0);
+  EXPECT_EQ(vec.CountZero<From::Right>(), 1);
 }
 
 }  // namespace bhp

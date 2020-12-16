@@ -42,10 +42,24 @@ class BitVector {
 
   size_type capacity() const noexcept { return mask_.size() * kWordBits; }
 
-  std::optional<size_type> countl_zero() const noexcept {
-    auto clz = CountZero<From::Left>(mask_.data(), mask_.data() + mask_.size());
-    if (clz.has_value() && clz < size_) {
-      return clz;
+  template <From from>
+  std::optional<size_type> CountZero() const noexcept {
+    if constexpr (from == From::Right) {
+      if (mask_.back() != 0) {
+        auto count = ::bhp::CountZero<From::Right>(mask_.back()) -
+                     static_cast<int>(kWordBits * mask_.size() - size_);
+        if (count >= 0) {
+          return count;
+        }
+      }
+    }
+    auto count =
+        ::bhp::CountZero<from>(mask_.data(), mask_.data() + mask_.size());
+    if (count.has_value() && count < size_) {
+      if constexpr (from == From::Right) {
+        *count -= kWordBits * mask_.size() - size_;
+      }
+      return count;
     }
     return std::nullopt;
   }
