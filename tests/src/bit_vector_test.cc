@@ -1,7 +1,7 @@
 // Copyright (C) 2020  Xiaoyue Chen
 //
-// This file is part of Bit Helper.
-// See <https://github.com/xiaoyuechen/bit-helper.git>.
+// This file is part of Bitplusplus.
+// See <https://github.com/xiaoyuechen/bitplusplus.git>.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,14 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "bit-helper/bit_vector.h"
+#include "bitplusplus/bit_vector.h"
 
 #include <cstddef>
 #include <tuple>
 
 #include "gtest/gtest.h"
 
-namespace bhp {
+namespace bpp {
 
 TEST(BitVectorTest, ResizeDown) {
   auto vec = BitVector(120, false);
