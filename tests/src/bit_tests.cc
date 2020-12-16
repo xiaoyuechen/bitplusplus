@@ -35,14 +35,17 @@ struct BitTest : public testing::TestWithParam<BitTestStruct> {};
 
 TEST_P(BitTest, TestBit) {
   auto [x, pos, set, clz, crz] = GetParam();
-  bool s = TestBit(x, pos);
-  EXPECT_FALSE(set ^ TestBit(x, pos));
+  EXPECT_FALSE(set ^ TestBit<From::Right>(x, pos));
+  EXPECT_FALSE(set ^ TestBit<From::Left>(x, 63 - pos));
 }
 
 TEST_P(BitTest, SetReset) {
   auto [x, pos, set, clz, crz] = GetParam();
-  EXPECT_TRUE(TestBit(SetBit(x, pos), pos));
-  EXPECT_FALSE(TestBit(ResetBit(x, pos), pos));
+  EXPECT_TRUE(TestBit<From::Right>(SetBit<From::Right>(x, pos), pos));
+  EXPECT_FALSE(TestBit<From::Right>(ResetBit<From::Right>(x, pos), pos));
+  auto pos_l = 63 - pos;
+  EXPECT_TRUE(TestBit<From::Right>(SetBit<From::Right>(x, pos_l), pos_l));
+  EXPECT_FALSE(TestBit<From::Right>(ResetBit<From::Right>(x, pos_l), pos_l));
 }
 
 TEST_P(BitTest, CzlCzrTest) {
