@@ -1,4 +1,4 @@
-add_executable(bit-helper-tests "src/bit_tests.cc")
+add_executable(bit-helper-tests "src/bit_tests.cc" "src/bit_vector_test.cc")
 
 target_link_libraries(bit-helper-tests PRIVATE bit-helper gtest gtest_main)
 
