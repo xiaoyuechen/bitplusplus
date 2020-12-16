@@ -44,8 +44,8 @@ TEST_P(BitTest, SetReset) {
   EXPECT_TRUE(TestBit<From::Right>(SetBit<From::Right>(x, pos), pos));
   EXPECT_FALSE(TestBit<From::Right>(ResetBit<From::Right>(x, pos), pos));
   auto pos_l = 63 - pos;
-  EXPECT_TRUE(TestBit<From::Right>(SetBit<From::Right>(x, pos_l), pos_l));
-  EXPECT_FALSE(TestBit<From::Right>(ResetBit<From::Right>(x, pos_l), pos_l));
+  EXPECT_TRUE(TestBit<From::Left>(SetBit<From::Left>(x, pos_l), pos_l));
+  EXPECT_FALSE(TestBit<From::Left>(ResetBit<From::Left>(x, pos_l), pos_l));
 }
 
 TEST_P(BitTest, CzlCzrTest) {

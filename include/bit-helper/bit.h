@@ -31,6 +31,9 @@ namespace bhp {
 enum class From { Left, Right };
 
 template <From from, typename U>
+constexpr U OneHot(int offset) noexcept;
+
+template <From from, typename U>
 [[nodiscard]] constexpr bool TestBit(U x, int pos) noexcept;
 
 template <From from, typename U>
@@ -67,33 +70,28 @@ std::optional<std::size_t> CountZero<From::Right>(
 
 //////////////////// implementation details below ////////////////////
 
-namespace internal {
-
-// 0x100000...
-template <typename U>
-static constexpr const U kLeftBit = U(1) << (sizeof(U) * 8 - 1);
-
-}  // namespace internal
+template <typename U, From from>
+constexpr U OneHot(int offset) noexcept {
+  if constexpr (from == From::Left) return U(1) << (sizeof(U) * 8 - 1 - offset);
+  return U(1) << offset;
+}
 
 template <From from, typename U>
 [[nodiscard]] constexpr bool TestBit(U x, int pos) noexcept {
   static_assert(std::is_integral<U>::value, "Integral required.");
-  if constexpr (from == From::Left) return x & (internal::kLeftBit<U> >> pos);
-  return x & (U(1) << pos);
+  return x & OneHot<U, from>(pos);
 }
 
 template <From from, typename U>
 [[nodiscard]] constexpr U SetBit(U x, int pos) noexcept {
   static_assert(std::is_integral<U>::value, "Integral required.");
-  if constexpr (from == From::Left) return x | (internal::kLeftBit<U> >> pos);
-  return x | (U(1) << pos);
+  return x | OneHot<U, from>(pos);
 }
 
 template <From from, typename U>
 [[nodiscard]] constexpr U ResetBit(U x, int pos) noexcept {
   static_assert(std::is_integral<U>::value, "Integral required.");
-  if constexpr (from == From::Left) return x & ~(internal::kLeftBit<U> >> pos);
-  return x & ~(U(1) << pos);
+  return x & ~OneHot<U, from>(pos);
 }
 
 template <>
